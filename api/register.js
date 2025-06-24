@@ -22,59 +22,70 @@ module.exports = async function handler(req, res) {
   }
 
   if (username.length < 3 || password.length < 6) {
-    return res.status(400).json({ message: 'Username deve ter pelo menos 3 caracteres e senha 6 caracteres.' });
+    return res.status(400).json({
+      message: 'Username deve ter pelo menos 3 caracteres e senha 6 caracteres.'
+    });
   }
 
   try {
-    // Registrar usuário no auth com e-mail temporário
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: `${username.toLowerCase()}@temp-mail.org`, // Domínio temporário para teste
-      password: password,
-    });
-
-    if (authError || !authData || !authData.user) {
-      console.error('Erro no registro de autenticação ou dados inválidos:', authError?.message || 'Nenhum usuário retornado');
-      return res.status(500).json({ message: `Erro no registro de autenticação: ${authError?.message || 'Dados de usuário inválidos'}` });
-    }
-
-    const userId = authData.user.id;
-
-    // Verificar duplicidade no profiles
+    // 🔍 Verificar se o usuário já existe antes de registrar
     const { data: existingUser, error: checkError } = await supabase
       .from('profiles')
       .select('id')
       .eq('username', username)
       .single();
 
-    if (checkError && checkError.code !== 'PGRST116') {
-      console.error('Erro ao verificar username:', checkError.message);
-      return res.status(500).json({ message: 'Erro ao verificar username.' });
-    }
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    const { data, error } = await supabase
-      .from('profiles')
-      .insert([{ id: userId, username, password: hashedPassword }]);
-
-    if (error) {
-      console.error('Erro ao inserir usuário:', error.message);
-      return res.status(500).json({ message: error.message });
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error('Erro ao verificar username:', checkError.message);
+      return res.status(500).json({ message: 'Erro ao verificar username.' });
     }
 
-    if (!data || data.length === 0) {
-      console.error('Nenhum dado retornado pela inserção:', data);
+    // 🔐 Criar usuário no Supabase Auth (email temporário para testes)
+    const email = `${username.toLowerCase()}@temp-mail.org`;
+
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email,
+      password
+    });
+
+    if (authError || !authData || !authData.user) {
+      console.error('Erro no registro de autenticação:', authError?.message || 'Nenhum usuário retornado');
+      return res.status(500).json({
+        message: `Erro no registro de autenticação: ${authError?.message || 'Nenhum usuário retornado'}`
+      });
+    }
+
+    const userId = authData.user.id;
+
+    // 🔐 Criptografar senha para armazenar em perfil
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const { data: insertedUser, error: insertError } = await supabase
+      .from('profiles')
+      .insert([{ id: userId, username, password: hashedPassword }])
+      .select();
+
+    if (insertError) {
+      console.error('Erro ao inserir usuário:', insertError.message);
+      return res.status(500).json({ message: insertError.message });
+    }
+
+    if (!insertedUser || insertedUser.length === 0) {
+      console.error('Falha ao recuperar dados do registro:', insertedUser);
       return res.status(500).json({ message: 'Falha ao recuperar dados do registro.' });
     }
 
-    console.log('Usuário registrado:', data);
-    return res.status(200).json({ message: 'User registered', userId: data[0].id });
+    console.log('Usuário registrado com sucesso:', insertedUser[0]);
+    return res.status(200).json({ message: 'User registered', userId: insertedUser[0].id });
+
   } catch (err) {
-    console.error('Erro no registro:', err);
-    return res.status(500).json({ message: 'Erro interno no registro.' + (err.message ? ' Detalhes: ' + err.message : '') });
+    console.error('Erro inesperado no registro:', err);
+    return res.status(500).json({
+      message: 'Erro interno no registro.' + (err.message ? ' Detalhes: ' + err.message : '')
+    });
   }
 };
