@@ -26,6 +26,20 @@ module.exports = async function handler(req, res) {
   }
 
   try {
+    // Registrar usuário no auth
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email: `${username}@example.com`, // Substitua por um e-mail válido ou gere dinamicamente
+      password: password,
+    });
+
+    if (authError) {
+      console.error('Erro no registro de autenticação:', authError.message);
+      return res.status(500).json({ message: 'Erro no registro de autenticação.' });
+    }
+
+    const userId = authData.user.id;
+
+    // Verificar duplicidade no profiles
     const { data: existingUser, error: checkError } = await supabase
       .from('profiles')
       .select('id')
@@ -45,7 +59,7 @@ module.exports = async function handler(req, res) {
 
     const { data, error } = await supabase
       .from('profiles')
-      .insert([{ username, password: hashedPassword }]); // Não incluir id
+      .insert([{ id: userId, username, password: hashedPassword }]);
 
     if (error) {
       console.error('Erro ao inserir usuário:', error.message);
