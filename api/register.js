@@ -28,13 +28,13 @@ module.exports = async function handler(req, res) {
   try {
     // Registrar usuário no auth
     const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: `${username.toLowerCase()}@bigfootconnect.com`, // E-mail mais realista
+      email: `${username.toLowerCase()}@bigfootconnect.com`, // Ajuste o domínio conforme necessário
       password: password,
     });
 
-    if (authError) {
-      console.error('Erro no registro de autenticação:', authError.message);
-      return res.status(500).json({ message: `Erro no registro de autenticação: ${authError.message}` });
+    if (authError || !authData || !authData.user) {
+      console.error('Erro no registro de autenticação ou dados inválidos:', authError?.message || 'Nenhum usuário retornado');
+      return res.status(500).json({ message: `Erro no registro de autenticação: ${authError?.message || 'Dados de usuário inválidos'}` });
     }
 
     const userId = authData.user.id;
@@ -64,6 +64,11 @@ module.exports = async function handler(req, res) {
     if (error) {
       console.error('Erro ao inserir usuário:', error.message);
       return res.status(500).json({ message: error.message });
+    }
+
+    if (!data || data.length === 0) {
+      console.error('Nenhum dado retornado pela inserção:', data);
+      return res.status(500).json({ message: 'Falha ao recuperar dados do registro.' });
     }
 
     console.log('Usuário registrado:', data);
