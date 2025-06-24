@@ -28,13 +28,13 @@ module.exports = async function handler(req, res) {
   try {
     // Registrar usuário no auth
     const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: `${username}@example.com`, // Substitua por um e-mail válido ou gere dinamicamente
+      email: `${username.toLowerCase()}@bigfootconnect.com`, // E-mail mais realista
       password: password,
     });
 
     if (authError) {
       console.error('Erro no registro de autenticação:', authError.message);
-      return res.status(500).json({ message: 'Erro no registro de autenticação.' });
+      return res.status(500).json({ message: `Erro no registro de autenticação: ${authError.message}` });
     }
 
     const userId = authData.user.id;
