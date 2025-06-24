@@ -1,13 +1,13 @@
 const { createClient } = require('@supabase/supabase-js');
 const bcrypt = require('bcryptjs');
-require('dotenv').config(); // Carrega variáveis de ambiente
+require('dotenv').config();
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error('⚠️ SUPABASE_URL e SUPABASE_ANON_KEY não estão configuradas.');
-  process.exit(1); // Para o processo se as variáveis não existirem
+  process.exit(1);
 }
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
@@ -32,7 +32,7 @@ module.exports = async function handler(req, res) {
       .eq('username', username)
       .single();
 
-    if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = nenhum registro encontrado
+    if (checkError && checkError.code !== 'PGRST116') {
       console.error('Erro ao verificar username:', checkError.message);
       return res.status(500).json({ message: 'Erro ao verificar username.' });
     }
@@ -45,7 +45,7 @@ module.exports = async function handler(req, res) {
 
     const { data, error } = await supabase
       .from('profiles')
-      .insert([{ username, password: hashedPassword }]);
+      .insert([{ username, password: hashedPassword }]); // Não incluir id
 
     if (error) {
       console.error('Erro ao inserir usuário:', error.message);
