@@ -10,7 +10,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
   process.exit(1);
 }
 
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+const supabase = createClient(supabaseUrl, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ message: 'Method Not Allowed' });
