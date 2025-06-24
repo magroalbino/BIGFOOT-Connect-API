@@ -1,18 +1,18 @@
-import { createClient } from '@supabase/supabase-js';
-import bcrypt from 'bcryptjs';
-import 'dotenv/config'; // Carrega variáveis de ambiente
+const { createClient } = require('@supabase/supabase-js');
+const bcrypt = require('bcryptjs');
+require('dotenv').config(); // Carrega variáveis de ambiente
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error('⚠️ SUPABASE_URL e SUPABASE_ANON_KEY não estão configuradas.');
-  process.exit(1);
+  process.exit(1); // Para o processo se as variáveis não existirem
 }
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ message: 'Method Not Allowed' });
 
   const { username, password } = req.body;
@@ -40,6 +40,6 @@ export default async function handler(req, res) {
     return res.status(200).json({ message: 'Login successful', userId: data.id });
   } catch (err) {
     console.error('Erro no login:', err);
-    return res.status(500).json({ message: 'Erro interno no login.' });
+    return res.status(500).json({ message: 'Erro interno no login.' + (err.message ? ' Detalhes: ' + err.message : '') });
   }
-}
+};
