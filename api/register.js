@@ -26,9 +26,9 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    // Registrar usuário no auth
+    // Registrar usuário no auth com e-mail temporário
     const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: `${username.toLowerCase()}@bigfootconnect.com`, // Ajuste o domínio conforme necessário
+      email: `${username.toLowerCase()}@temp-mail.org`, // Domínio temporário para teste
       password: password,
     });
 
